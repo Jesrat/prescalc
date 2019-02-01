@@ -1,0 +1,124 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import sys
+import datetime
+from dateutil.relativedelta import relativedelta
+
+#~~~~~~~~~~~~~~~~~~~~~~~DOCUMENTACION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
+if len(sys.argv)>1:
+    if sys.argv[1] == '--help':
+        print('esta es la ayuda:')
+        print('prescalc 60000->(monto_solicitado)[obligatorio] 18->(plazo_solicitado)[obligatorio]   5:5000->(pago_aplicado_en_cuota_No:monto_del_pago)[opcional]   ')
+        sys.exit()
+else:
+    print('Debe ingresar argumentos. \n prescalc --help')
+    sys.exit()
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+vReqAmount = float(sys.argv[1])
+vReqTime = int(sys.argv[2])
+
+#constant 8% Anual Interes
+cAi = float(8)
+
+vInFee = int()
+vXtraPay = float()
+if len(sys.argv)>3:
+    vArgvs = sys.argv[3].split(':')
+    vInFee = vArgvs[0]
+    vXtraPay = float(vArgvs[1])
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def calculate(pAmount,pReqTime):
+    
+    #interes a aplicar al prestamo
+    rIm = float((cAi/12)*pReqTime)
+
+    #Total a Pagar
+    rTotal = pAmount*(rIm/100)+pAmount
+
+    #Cuota con Interes
+    rQTotal = rTotal/pReqTime
+
+    #Cuota sin interes
+    rQuota = pAmount/pReqTime
+
+    #Interes de cuota
+    rQInteres = rQTotal-rQuota
+
+    return rIm, rTotal, rQTotal, rQuota, rQInteres
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def main():
+
+    vIm, vTotal, vQTotal, vQuota, vQInteres = calculate(vReqAmount,vReqTime)
+
+    print('{0:_^70}'.format(''))
+    print('|{0:^68}|'.format(''))
+    print('|{0:^68}|'.format('CALCULADORA DE PRESTAMO (interes simple)'))
+    vDisp = 'Interes anual {0:.0f}%'.format(cAi)
+    print('|{0:^68}|'.format(vDisp))
+    print('|{0:_^68}|'.format(''))
+
+    printStr = []
+    printStr.append('Monto solicitado: C${0:,.2f} plazo:{1} meses'.format(vReqAmount,vReqTime))
+    printStr.append('Interes de Prestamo {0:.2f}%'.format(vIm))
+    printStr.append('Cuota mensual sin interes C${0:,.2f}'.format(vQuota))
+    printStr.append('Interes mensual de prestamo C${0:,.2f}'.format(vQInteres))
+    printStr.append('Cuota total  C${0:,.2f}'.format(vQTotal))
+    printStr.append('Total a Pagar  C${0:,.2f}'.format(vTotal))
+
+    print('|{0:^68}|'.format(''))
+    for line in printStr:
+        print('|{0:^68}|'.format(line))
+
+    print('|{0:_^68}|'.format(''))
+    print('|{0:^68}|'.format(''))
+
+    print('|{0:^68}|'.format('TABLA DE PAGOS'))
+
+    print('|{0:_^68}|'.format(''))
+    print('|{0:^9}|{0:^9}|{0:^14}|{0:^17}|{0:^15}|'.format(''))
+    print('|{0:^9}|{1:^9}|{2:^14}|{3:^17}|{4:^15}|'.format('Periodo','Fecha','Pago Interes','Abono a Capital','Saldo Capital'))
+    print('|{0:_^9}|{0:_^9}|{0:_^14}|{0:_^17}|{0:_^15}|'.format(''))
+
+    vFec = datetime.datetime.now()
+    
+    #retroceder un mes
+    #vFec = vFec + relativedelta(months=-1)
+
+    print('|{0:^9}|{0:^9}|{0:^14}|{0:^17}|{0:^15}|'.format(''))
+
+    vSaldoCapEndLoop=vReqAmount
+    for period in range(1,(vReqTime+1)):
+        vPayDt = vFec + relativedelta(months=period)
+
+
+        vSaldoCap = vSaldoCapEndLoop-vQuota
+        if int(vSaldoCap) < 0:
+            vQuota = vSaldoCap*-1
+            vSaldoCap = 0
+            print('|{0:^9}| {1:%m/%Y} |{2:>12,.2f}  |{3:>15,.2f}  |{4:>13,.2f}  |'.format(period,vPayDt,vQInteres,vQuota,vSaldoCap))
+            break
+        else:
+            print('|{0:^9}| {1:%m/%Y} |{2:>12,.2f}  |{3:>15,.2f}  |{4:>13,.2f}  |'.format(period,vPayDt,vQInteres,vQuota,vSaldoCap))
+
+        #Pagos Extraordinarios
+        if vInFee and int(vInFee) == period:
+            vSaldoCap = vSaldoCap-vXtraPay
+            print('| {0:^10}| {1:%m/%Y} |{2:>12}  |{3:>15,.2f}  |{4:>13,.2f}  |'.format('∟X',vPayDt,'',vXtraPay,vSaldoCap))
+            
+        vSaldoCapEndLoop = vSaldoCap
+
+    print('|{0:_^9}|{0:_^9}|{0:_^14}|{0:_^17}|{0:_^15}|'.format(''))
+
+    print('')
+
+if __name__ == "__main__":
+    main()
