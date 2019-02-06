@@ -1,5 +1,5 @@
 # PRESCALC
-Es una calculadora de prestamos para la terminal con el output formateado
+Es una calculadora de prestamos para la terminal con el output formateado como tabla
 ```sh
 # para ver la ayuda
 prescalc --help
